@@ -16,8 +16,32 @@ corr <- function(directory, threshold = 0) {
   
   ## Return a numeric vector of correlations
   
+  ## Get the number of complete observations for all monitors in the directory
+  allobs<-complete(directory)
+  ## Find those that have the requisite number of complete observations
+  qualobs<-allobs[allobs["nobs"] > threshold, ]
+  ## Get the correlations for these
+  
+  #All in one go
+  #corrs<- getCorr(directory,(qualobs["id"]))
+  #Via lapply
+  corrs<-lapply(qualobs[,"id"], getCorr,  directory=directory)
+  unlist(corrs)
+}
+
+getCorr <- function(directory, id) {
+  ## Return a dataframe of the correlation for the monitor with these ids
   
   
+  # Build the full path, expanding id to length 3 with leading zeros
+  filename<-paste(directory,"/",formatC(id,flag="0",width=3),".csv",sep="")
+  # Get the data
+  allData<-read.csv(filename)
+  # filter for complete observations
+  goodData<-allData[!is.na(allData["sulfate"]) & ! is.na(allData["nitrate"]), ]
+  # return the correlation
+  cor(goodData[ , 2],goodData[ ,3])
+
 }
 #########################
 ##Sample output
@@ -27,7 +51,7 @@ corr <- function(directory, threshold = 0) {
 # source("corr.R")
 # source("complete.R")
 # cr <- corr("specdata", 150)
-# head(cr)
+# head(cr)15
 # ## [1] -0.01896 -0.14051 -0.04390 -0.06816 -0.12351 -0.07589
 # summary(cr)
 # ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
